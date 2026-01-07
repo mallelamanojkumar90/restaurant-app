@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+pydantic-settings
+python-dotenv
+websockets
