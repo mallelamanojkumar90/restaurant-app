@@ -4,6 +4,7 @@ Agent Orchestrator - Coordinates all autonomous agents
 from agents.table_agent import TableAgent
 from agents.queue_agent import QueueAgent
 from agents.eta_agent import ETAAgent
+from agents.notification_agent import NotificationAgent
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from models.models import Table, QueueEntry
@@ -21,6 +22,7 @@ class AgentOrchestrator:
         self.table_agent = TableAgent()
         self.queue_agent = QueueAgent()
         self.eta_agent = ETAAgent()
+        self.notification_agent = NotificationAgent()
         logger.info("AgentOrchestrator initialized with all agents")
 
     def prepare_environment(self, db: Session) -> Dict[str, Any]:
@@ -58,6 +60,15 @@ class AgentOrchestrator:
         # Run ETA Agent
         eta_result = self.eta_agent.run(environment)
         
+        # Run Notification Agent (needs results from previous agents)
+        notification_environment = environment.copy()
+        notification_environment.update({
+            "queue_matches": queue_result.get("matches", []),
+            "table_alerts": table_result.get("alerts", []),
+            "queue_updates": queue_result.get("queue_updates", [])
+        })
+        notification_result = self.notification_agent.run(notification_environment)
+        
         # Apply ETA updates to database
         for eta_update in eta_result.get("eta_updates", []):
             queue_entry = db.query(QueueEntry).filter(
@@ -82,6 +93,7 @@ class AgentOrchestrator:
             "table_agent": table_result,
             "queue_agent": queue_result,
             "eta_agent": eta_result,
+            "notification_agent": notification_result,
             "summary": {
                 "total_tables": len(environment["tables"]),
                 "available_tables": len(environment["available_tables"]),

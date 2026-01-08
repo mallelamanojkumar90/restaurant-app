@@ -29,7 +29,7 @@ Agent Orchestration Layer
          ↓
 Backend Services (FastAPI)
          ↓
-SQLite Database
+SQLite / PostgreSQL Database
 ```
 
 ## 🛠️ Technology Stack
@@ -37,13 +37,14 @@ SQLite Database
 ### Backend
 - **Framework**: FastAPI
 - **Language**: Python 3.x
-- **Database**: SQLite (SQLAlchemy ORM)
+- **Database**: SQLite / PostgreSQL (SQLAlchemy ORM)
 - **Real-time Communication**: WebSockets
 - **Dependencies**:
   - fastapi
   - uvicorn
   - pydantic
   - sqlalchemy
+  - psycopg2-binary (for PostgreSQL)
   - pydantic-settings
   - python-dotenv
   - websockets
@@ -142,15 +143,17 @@ restaurant app/
 │   │   ├── table_agent.py   # Table management agent
 │   │   ├── queue_agent.py   # Queue management agent
 │   │   ├── eta_agent.py     # ETA calculation agent
+│   │   ├── notification_agent.py # Customer & Staff alerts
 │   │   └── orchestrator.py  # Agent orchestration
 │   ├── database/            # Database configuration and setup
-│   │   └── db.py           # SQLAlchemy setup
+│   │   └── db.py           # SQLAlchemy setup (Dynamic DB switching)
 │   ├── models/              # Data models and schemas
 │   │   ├── models.py       # SQLAlchemy models
 │   │   └── schemas.py      # Pydantic schemas
 │   ├── main.py             # FastAPI application entry point
 │   ├── requirements.txt    # Python dependencies
-│   └── restaurant.db       # SQLite database file
+│   ├── .env                # Environment configuration
+│   └── restaurant.db       # SQLite database file (if used)
 ├── frontend/
 │   ├── src/
 │   │   ├── components/     # Reusable React components
@@ -163,7 +166,8 @@ restaurant app/
 │   ├── package.json        # npm dependencies
 │   └── vite.config.js      # Vite configuration
 ├── docs/
-│   └── PRD.md             # Product Requirements Document
+│   ├── PRD.md             # Product Requirements Document
+│   └── AGENT_WORKFLOW.md  # Detailed Agent documentation
 └── run_dev.ps1            # Development startup script
 ```
 
@@ -188,12 +192,21 @@ restaurant app/
 ## 🔧 Configuration
 
 ### Backend Configuration
-The backend uses environment variables for configuration. Create a `.env` file in the `backend` directory if needed:
+The backend uses environment variables for configuration. Create a `.env` file in the `backend` directory (one has been created for you):
 
 ```env
+# For SQLite (Default)
 DATABASE_URL=sqlite:///./restaurant.db
-API_PORT=8000
+
+# For PostgreSQL
+# DATABASE_URL=postgresql://user:password@localhost:5432/db_name
 ```
+
+#### Switching to PostgreSQL:
+1. Ensure you have a PostgreSQL server running.
+2. Create a database (e.g., `restaurant_db`).
+3. Update the `DATABASE_URL` in `backend/.env`.
+4. The application will automatically create the required tables on the next startup.
 
 ### Frontend Configuration
 Frontend configuration can be adjusted in `vite.config.js` for build settings and proxy configurations.
@@ -208,6 +221,8 @@ Key API endpoints (see http://localhost:8000/docs for full documentation):
 - `GET /queue` - Get current queue
 - `POST /queue` - Add customer to queue
 - `GET /queue/eta` - Get estimated waiting time
+- `GET /api/agents/status` - View real-time agent analysis
+- `POST /api/agents/run` - Manually trigger agent cycle
 
 ## 🧪 Development
 

@@ -146,9 +146,18 @@ async def get_agent_status(db: Session = Depends(get_db)):
     table_result = orchestrator.table_agent.run(environment)
     queue_result = orchestrator.queue_agent.run(environment)
     
+    notification_env = environment.copy()
+    notification_env.update({
+        "queue_matches": queue_result.get("matches", []),
+        "table_alerts": table_result.get("alerts", []),
+        "queue_updates": queue_result.get("queue_updates", [])
+    })
+    notification_result = orchestrator.notification_agent.run(notification_env)
+    
     return {
         "table_analysis": table_result,
         "queue_analysis": queue_result,
+        "notification_analysis": notification_result,
         "environment_summary": {
             "total_tables": len(environment["tables"]),
             "available_tables": len(environment["available_tables"]),
